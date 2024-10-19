@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tracker Bus CTP Cluj-Napoca</title>
+    <style>
+        #map {
+            height: 640px;
+            width: 100%;
+        }
+        .btn {
+            padding: 10px;
+            margin: 5px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tracker Bus CTP Cluj-Napoca</h1>
+    <div>
+        <button class="btn" onclick="filterByRoute(1)">1</button>
+        <button class="btn" onclick="filterByRoute(58)">9</button>
+        <button class="btn" onclick="filterByRoute(13)">24B</button>
+        <button class="btn" onclick="filterByRoute(14)">25</button>
+        <button class="btn" id="toggle-businesses" onclick="toggleBusinesses()">Show/Hide Other</button>
+    </div>
+
+    <div id="map"></div>
+    
+    <script>
+        let map;
+        let markers = [];
+        let shapesData = [];
+        let polylines = [];
+		let stopLocations = [];
+		let tripStops = [];
+		let darkStyle, darkStyleOff;
+		let otherVisible = true;
+
+		async function initMap() {
+			map = new google.maps.Map(document.getElementById('map'), {
+				zoom: 14,
+				center: { lat: 46.7712, lng: 23.5966 },
+				mapTypeId: google.maps.MapTypeId.ROADMAP,
+				streetViewControl: false,
+				mapTypeControl: false
+			});
+			
+			await fetchMapStyles();
+			applyMapStyle();
+                        fetchShapes();
+			fetchStopLocations();	
+			fetchTripStops();
+        }
+		
+        async function fetchMapStyles() {
+            try {
+                const darkResponse = await fetch('darkmapstyle.json');
+                const darkOffResponse = await fetch('darkmapstyleoff.json');
+
+                if (!darkResponse.ok || !darkOffResponse.ok) {
+                    throw new Error('Failed to load map styles');
+                }
+
+                darkStyle = await darkResponse.json();
+                darkStyleOff = await darkOffResponse.json();
+            } catch (error) {
+                console.error('Error loading map styles:', error);
+            }
+        }
+		
+		
+        function applyMapStyle() {
+            const styles = otherVisible ? darkStyle : darkStyleOff;
+            map.setOptions({ styles });
+        }
+		
+		
+
+        async function fetchShapes() {
+            try {
+                const response = await fetch('shapes.json');
+                if (!response.ok) {
+                    throw new Error(`HTTP error, status: ${response.status}`);
+                }
+
+                shapesData = await response.json();
+                console.log('Shapes data loaded:', shapesData);
+            } catch (error) {
+                console.error('Error loading shapes data:', error);
+            }
+        }
+		
+		async function fetchStopLocations() {
+			try {
+				const response = await fetch('stoplocations.json');
+				if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+				stopLocations = await response.json();
+				console.log('Stop locations loaded:', stopLocations);
+			} catch (error) {
+				console.error('Error loading stop locations:', error);
+			}
+		}
+
+		async function fetchTripStops() {
+			try {
+				const response = await fetch('tripstops.json');
+				if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+				tripStops = await response.json();
+				console.log('Trip stops loaded:', tripStops);
+			} catch (error) {
+				console.error('Error loading trip stops:', error);
+			}
+		}
+
+        //nu mereu sunt routeid_0/_1 cred
+        const shapeIds = {
+            1: { inbound: '1_0', outbound: '1_1' },
+            58: { inbound: '58_0', outbound: '58_1' },
+            13: { inbound: '13_0', outbound: '13_1' },
+            14: { inbound: '14_0', outbound: '14_1' }
+        };
+
+        async function fetchVehicles(routeId) {
+            console.log(`Fetching vehicles for route ID: ${routeId}`);
+            
+            try {
+                const response = await fetch('https://api.tranzy.ai/v1/opendata/vehicles', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-API-KEY': 'Gvb0dsOrm6hyq4JLChTJ5Pusf8XqSw8LznXxhm7u',
+                        'X-Agency-Id': '2'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error, status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Data received from API:', data);
+
+                const filteredVehicles = data.filter(vehicle => 
+                    vehicle.route_id === routeId &&
+                    vehicle.trip_id !== null && 
+                    (vehicle.trip_id.endsWith('_0') || vehicle.trip_id.endsWith('_1'))
+                );
+				
+                console.log(`Filtered vehicles for route ID ${routeId}:`, filteredVehicles);
+				
+				const drawnTripStops = new Set();
+                clearMarkers();
+                filteredVehicles.forEach(vehicle => {
+                    placeMarker(vehicle);
+					if (!drawnTripStops.has(vehicle.trip_id)) {
+						drawStops(vehicle.trip_id);
+						drawnTripStops.add(vehicle.trip_id);
+					}
+                });
+				
+                clearPolylines();
+                
+                drawShape(shapeIds[routeId]?.inbound, true);
+                drawShape(shapeIds[routeId]?.outbound, false);
+				
+				getUserLocation();
+
+            } catch (error) {
+                console.error('Error fetching vehicle data:', error);
+            }
+        }
+		
+		
+        function getUserLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const userLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    console.log('User location:', userLocation);
+
+					const userMarker = new google.maps.Marker({
+						position: userLocation,
+						map: map,
+						title: 'Your Location'
+					});
+                    markers.push(userMarker);
+                    map.setCenter(userLocation); // e bine sau nu?
+                }, () => {
+                    console.error('Error getting user location.');
+                });
+            } else {
+                console.error('Geolocation is not supported by this browser.');
+            }
+        }
+
+		function drawShape(shapeId, isInbound) {
+			if (!shapesData || !shapesData.length) {
+				console.warn('Shapes data is not available');
+				return;
+			}
+
+			const shapePoints = shapesData
+				.filter(shape => shape.shape_id === shapeId)
+				.sort((a, b) => a.shape_pt_sequence - b.shape_pt_sequence)
+				.map(point => ({ lat: point.shape_pt_lat, lng: point.shape_pt_lon }));
+
+			if (!shapePoints.length) {
+				console.warn(`No shape data found for shape ID: ${shapeId}`);
+				return;
+			}
+
+			const polyline = new google.maps.Polyline({
+				path: shapePoints,
+				geodesic: true,
+				strokeColor: isInbound ? '#FF0000' : '#00FF00', //red - green
+				strokeOpacity: 0.7,
+				strokeWeight: 6
+			});
+
+			polyline.setMap(map);
+			polylines.push(polyline);
+
+			const startIconUrl = isInbound ? 'icons/red-start.png' : 'icons/green-start.png';
+			const startMarker = new google.maps.Marker({
+				position: shapePoints[0],
+				map: map,
+				icon: {
+					url: startIconUrl,
+					scaledSize: new google.maps.Size(32, 32)
+				}
+			});
+
+			markers.push(startMarker);
+		}
+		
+		function drawStops(tripId) {
+			const tripStopsForId = tripStops.filter(tripStop => tripStop.trip_id === tripId);
+			//console.log(`tripid ${tripId}`);
+			tripStopsForId.forEach(tripStop => {
+				const stopLocation = stopLocations.find(stop => stop.stop_id === tripStop.stop_id);
+				if (stopLocation) {
+					const stopIconUrl = tripId.endsWith('_0') ? 'icons/red-stop.png' : 'icons/green-stop.png';
+					//console.log(`Stop id ${stopLocation.stop_id} and ${stopIconUrl}`);
+					const stopMarker = new google.maps.Marker({
+						position: {
+							lat: stopLocation.stop_lat,
+							lng: stopLocation.stop_lon
+						},
+						map: map,
+						icon: {
+							url: stopIconUrl,
+							scaledSize: new google.maps.Size(12, 12)
+						}
+					});
+					markers.push(stopMarker);
+				}
+			});
+		}
+
+
+        function clearMarkers() {
+            markers.forEach(marker => marker.setMap(null));
+            markers = [];
+        }
+
+        function clearPolylines() {
+            polylines.forEach(polyline => polyline.setMap(null));
+            polylines = [];
+        }
+
+		function placeMarker(vehicle) {
+			const position = { lat: vehicle.latitude, lng: vehicle.longitude };
+			const iconUrl = vehicle.trip_id.endsWith('_0') ? 'icons/green-icon.png' : 'icons/red-icon.png';
+
+			const marker = new google.maps.Marker({
+				position,
+				map,
+				title: `Nr. ${vehicle.label}`,
+				icon: {
+					url: iconUrl,
+					scaledSize: new google.maps.Size(16, 16) //virgula daca trb
+					//anchor: new google.maps.Point(8, 8) //nu cred ca trebuie
+				}
+			});
+			markers.push(marker);
+		}
+
+        function filterByRoute(routeId) {
+            console.log(`Button pressed for route ID ${routeId}`);
+            fetchVehicles(routeId);
+        }
+		
+        function toggleBusinesses() {
+            otherVisible = !otherVisible;
+            applyMapStyle();
+        }
+    </script>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDc8Y7sBvZTfC4PLc8xX8XwhVxmkU9dXJY&callback=initMap" async defer></script>
+</body>
+</html>
