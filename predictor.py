@@ -6,10 +6,9 @@ import sys
 import os
 from flask_cors import CORS
 from flask import Flask, request, jsonify
-from dotenv import load_dotenv
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["https://bluegalaxy4012.github.io"])
 
 """
 nu merge api key prin .env
@@ -50,11 +49,13 @@ def create_and_train_model(X, y):
     return model
 
 def save_model(model, trip_id):
-    model.save(f"{trip_id}_model.keras")
+    model_path = f"/home/bluegalaxy4012/trackerctp/{trip_id}_model.keras"
+    model.save(model_path)
 
 def load_model(trip_id):
-    if os.path.exists(f"{trip_id}_model.keras"):
-        return keras.models.load_model(f"{trip_id}_model.keras")
+    model_path = f"/home/bluegalaxy4012/trackerctp/{trip_id}_model.keras"
+    if os.path.exists(model_path):
+        return keras.models.load_model(model_path)
     return None
 
 def train_model_for_trip(csv_path, trip_id, model=None):
@@ -137,6 +138,8 @@ def predict():
     return jsonify({"predicted_time": predicted_time})
 
 if __name__ == '__main__':
+    app.run()
+    """
     mode = input("host flask or run main(F/M): ").strip().upper()
     if mode == 'F':
         app.run(debug=True)
@@ -145,3 +148,4 @@ if __name__ == '__main__':
     else:
         print("Invalid mode.")
         sys.exit(1)
+    """
