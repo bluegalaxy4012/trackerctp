@@ -200,7 +200,10 @@
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
                     const result = await response.json();
-                    alert(`Predicted time from vehicle to clicked point is ${result.predicted_time} seconds.`);
+                    const predictedTime = parseFloat(result.predicted_time);
+                    const minutes = Math.floor(predictedTime / 60);
+                    const seconds = Math.floor(predictedTime % 60);
+                    alert(`Predicted time from selected vehicle to clicked point is ${minutes} minutes and ${seconds} seconds.`);
                 } catch (error) {
                     console.error('Error predicting time:', error);
                     alert('Error predicting time.');

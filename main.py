@@ -7,30 +7,16 @@ import os
 from flask_cors import CORS
 from flask import Blueprint, Flask, request, jsonify
 
-profile = Blueprint('profile', __name__)
+routing_profile = Blueprint('routing_profile', __name__)
 
 
 def create_app():
     app = Flask(__name__)
     CORS(app)
 
-    app.register_blueprint(profile)
+    app.register_blueprint(routing_profile)
     return app
 
-
-"""
-nu merge api key prin .env
-
-load_dotenv()
-
-@app.route('/config')
-def get_config():
-    return jsonify({
-        'googleMapsApiKey': GOOGLE_MAPS_API_KEY
-    })
-"""
-
-main = Blueprint('main', __name__)
 
 peak_hours = {8, 9, 14, 15, 16, 17, 18}
 
@@ -131,7 +117,7 @@ def main():
             break
 
 
-@profile.route('/predict', methods=['POST'])
+@routing_profile.route('/predict', methods=['POST'])
 def predict():
     data = request.json
     trip_id = data['trip_id']
