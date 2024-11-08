@@ -1,14 +1,22 @@
 import pandas as pd
 import numpy as np
-import keras
+from tensorflow import keras
 from datetime import datetime
 import sys
 import os
 from flask_cors import CORS
-from flask import Flask, request, jsonify
+from flask import Blueprint, Flask, request, jsonify
 
-app = Flask(__name__)
-CORS(app, origins=["https://bluegalaxy4012.github.io"])
+profile = Blueprint('profile', __name__)
+
+
+def create_app():
+    app = Flask(__name__)
+    CORS(app)
+
+    app.register_blueprint(profile)
+    return app
+
 
 """
 nu merge api key prin .env
@@ -22,6 +30,7 @@ def get_config():
     })
 """
 
+main = Blueprint('main', __name__)
 
 peak_hours = {8, 9, 14, 15, 16, 17, 18}
 
@@ -122,7 +131,7 @@ def main():
             break
 
 
-@app.route('/predict', methods=['POST'])
+@profile.route('/predict', methods=['POST'])
 def predict():
     data = request.json
     trip_id = data['trip_id']
@@ -138,7 +147,8 @@ def predict():
     return jsonify({"predicted_time": predicted_time})
 
 if __name__ == '__main__':
-    app.run()
+    pass
+    #app.run(port=8080, debug=True)
     """
     mode = input("host flask or run main(F/M): ").strip().upper()
     if mode == 'F':
