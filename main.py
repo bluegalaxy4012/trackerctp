@@ -44,11 +44,11 @@ def create_and_train_model(X, y):
     return model
 
 def save_model(model, trip_id):
-    model_path = f"/home/bluegalaxy4012/trackerctp/{trip_id}_model.keras"
+    model_path = f"models/{trip_id}_model.keras"
     model.save(model_path)
 
 def load_model(trip_id):
-    model_path = f"/home/bluegalaxy4012/trackerctp/{trip_id}_model.keras"
+    model_path = f"models/{trip_id}_model.keras"
     if os.path.exists(model_path):
         return keras.models.load_model(model_path)
     return None
