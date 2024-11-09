@@ -440,8 +440,7 @@
                 });
                 //alert("Vehicle selected. Now select a point on its route.");
                 //marker.setIcon({ url: selectedIconUrl, scaledSize: new google.maps.Size(20, 20) }); // alt icon pentru bus selectat
-            });
-            markers.push(marker);
+                markers.push(marker);
             }
 
             function filterByRoute(routeId) {
@@ -456,7 +455,7 @@
             }
 
             function calculateDistance(lat1, lon1, lat2, lon2) {
-                //haversine calc
+                //Haversine formula
                 const R = 6371;
                 const dLat = (lat2 - lat1) * Math.PI / 180;
                 const dLon = (lon2 - lon1) * Math.PI / 180;

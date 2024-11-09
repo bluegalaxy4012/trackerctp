@@ -18,7 +18,7 @@ def create_app():
     return app
 
 
-peak_hours = {8, 9, 14, 15, 16, 17, 18}
+peak_hours = {7, 8, 14, 15, 16, 17, 18}
 
 def load_data(csv_path):
     data = pd.read_csv(csv_path)
@@ -63,13 +63,13 @@ def train_model_for_trip(csv_path, trip_id, model=None):
     return model
 
 def predict_time_to_reach(model, d1, d2, current_datetime):
-    if d2 - d1 < 0.015:
+    if d2 - d1 < 0.015 or d2 - d1 > 15:
         return 0
 
     time_elapsed = 0
     current_distance = d2
     peak = 1 if current_datetime.hour in peak_hours else 0
-    weekday = 1 if current_datetime.weekday() < 5 else 0
+    weekday = 0.5 if current_datetime.weekday() < 5 else 0
     max_iter = 50
 
     while current_distance > d1 and max_iter > 0:
@@ -134,8 +134,9 @@ def predict():
 
 if __name__ == '__main__':
     pass
-    #app.run(port=8080, debug=True)
+
     """
+    - pentru flask local sau antrenat de modele
     mode = input("host flask or run main(F/M): ").strip().upper()
     if mode == 'F':
         app.run(debug=True)
