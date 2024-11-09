@@ -192,7 +192,7 @@
                 }
                 try {
                     const startTime = performance.now();
-                    updateWarningMessage("Currently calculating the estimated arrival time, please wait...");
+                    updateWarningText("Currently calculating the estimated arrival time, please wait...");
                     const response = await fetch('https://trackerctp.onrender.com/predict', {
                         method: 'POST',
                         headers: {
@@ -217,7 +217,7 @@
                     console.error('Error predicting time:', error);
                     alert("Error predicting time.");
                 } finally {
-                    updateWarningMessage("Some warning messages will be displayed here.");
+                    updateWarningText("Some warning messages will be displayed here.");
                 }
             }
             async function initiatePrediction() {
@@ -243,7 +243,7 @@
                                 url: selectedIconUrl,
                                 scaledSize: new google.maps.Size(30, 30)
                             });
-                            alert("Vehicle selected.");
+                            updateWarningText("Vehicle selected.");
                             clickEnabled = true;
                         });
                     }
@@ -291,11 +291,11 @@
                             map.setCenter(userLocation);
                         }
                     }, () => {
-                        updateWarningMessage('Geolocation is not supported by this browser.');
+                        updateWarningText('Geolocation is not supported by this browser.');
                         console.error('Error getting user location.');
                     });
                 } else {
-                    updateWarningMessage('Geolocation is not supported by this browser.');
+                    updateWarningText('Geolocation is not supported by this browser.');
                     console.error('Geolocation is not supported by this browser.');
                 }
             }
