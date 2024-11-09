@@ -33,9 +33,9 @@
             <button class="btn" onclick="filterByRoute(14)">25</button>
             <button class="btn" onclick="filterByRoute(45)">46B</button>
             <button class="btn" onclick="filterByRoute(46)">47</button>
-            <button class="btn" id="toggle-businesses" onclick="toggleBusinesses()">Show/Hide Other</button>
+            <button class="btn" onclick="toggleBusinesses()">Show/Hide other map elements</button>
             <button class="btn" onclick="centerMapOnUser()">Center on you</button>
-            <button class="btn" id="predict-btn" onclick="initiatePrediction()">Predict time for bus to arrive</button>
+            <button class="btn" onclick="initiatePrediction()">Select vehicle/destination for time arrival prediction</button>
         </div>
         <div id="map"></div>
         <script>
@@ -96,7 +96,7 @@
                         throw new Error(`HTTP error, status: ${response.status}`);
                     }
                     shapesData = await response.json();
-                    console.log('Shapes data loaded:', shapesData);
+                    //console.log('Shapes data loaded:', shapesData);
                 } catch (error) {
                     console.error('Error loading shapes data:', error);
                 }
@@ -106,7 +106,7 @@
                     const response = await fetch('stoplocations.json');
                     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                     stopLocations = await response.json();
-                    console.log('Stop locations loaded:', stopLocations);
+                    //console.log('Stosp locations loaded:', stopLocations);
                 } catch (error) {
                     console.error('Error loading stop locations:', error);
                 }
@@ -116,7 +116,7 @@
                     const response = await fetch('tripstops.json');
                     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                     tripStops = await response.json();
-                    console.log('Trip stops loaded:', tripStops);
+                    //console.log('Trip stops loaded:', tripStops);
                 } catch (error) {
                     console.error('Error loading trip stops:', error);
                 }
@@ -149,7 +149,7 @@
                 }
             };
             async function fetchVehicles(routeId) {
-                console.log(`Fetching vehicles for route ID: ${routeId}`);
+                console.log(`Fetching vehicle data.`);
                 try {
                     const response = await fetch('https://api.tranzy.ai/v1/opendata/vehicles', {
                         method: 'GET',
@@ -163,9 +163,9 @@
                         throw new Error(`HTTP error, status: ${response.status}`);
                     }
                     const data = await response.json();
-                    console.log('Data received from API:', data);
+                    //console.log('Data received from API:', data);
                     const filteredVehicles = data.filter(vehicle => vehicle.route_id === routeId && vehicle.trip_id !== null && (vehicle.trip_id.endsWith('_0') || vehicle.trip_id.endsWith('_1')));
-                    console.log(`Filtered vehicles for route ID ${routeId}:`, filteredVehicles);
+                    //console.log(`Filtered vehicles for route ID ${routeId}:`, filteredVehicles);
                     const drawnTripStops = new Set();
                     clearMarkers();
                     filteredVehicles.forEach(vehicle => {
@@ -184,6 +184,10 @@
                 }
             }
             async function predictTime(tripId, d1, d2) {
+                if (d1 > d2) {
+                    alert("You should select a destination that's in on the current vehicle route direction, not behind it.");
+                    return;
+                }
                 try {
                     const response = await fetch('https://trackerctp.onrender.com/predict', {
                         method: 'POST',
@@ -206,53 +210,52 @@
                     alert(`Predicted time from selected vehicle to clicked point is ${minutes} minutes and ${seconds} seconds.`);
                 } catch (error) {
                     console.error('Error predicting time:', error);
-                    alert('Error predicting time.');
+                    alert("Error predicting time.");
                 }
             }
             async function initiatePrediction() {
-                //selectedBus = null;
                 destination = null;
-                //console.log(`entered`);
                 clickEnabled = true;
-                map.addListener('click', async function(event) {
-                    if (!clickEnabled) return;
-                    clickEnabled = false;
-                    if (!selectedBus) {
-                        let vehiclesFound = false;
-                        let selectedOne = false;
-                        markers.forEach(marker => {
-                            if (marker.isVehicle) {
-                                vehiclesFound = true;
-                                //console.log(calculateDistance(marker.getPosition().lat(), marker.getPosition().lng(), event.latLng.lat(), event.latLng.lng()));
-                                if (calculateDistance(marker.getPosition().lat(), marker.getPosition().lng(), event.latLng.lat(), event.latLng.lng()) < 0.125) { // ehh if two buses are next to each other
-                                    selectedOne = true;
-                                    selectedBus = marker;
-                                    alert("Vehicle selected! Now select a point on its route.");
-                                    return;
-                                }
+                alert("If you haven't selected a vehicle, do now. If you have, select a point on its current route.");
+                markers.forEach(marker => {
+                    if (marker.isVehicle) {
+                        marker.addListener('click', async function() {
+                            if (!clickEnabled) return;
+                            clickEnabled = false;
+                            //acelasi tripId
+                            const iconUrl = marker.tripId.endsWith('_0') ? 'icons/red-icon.png' : 'icons/green-icon.png';
+                            const selectedIconUrl = marker.tripId.endsWith('_0') ? 'icons/selected-red-icon.png' : 'icons/selected-green-icon.png';
+                            if (selectedBus) {
+                                selectedBus.setIcon({
+                                    url: iconUrl,
+                                    scaledSize: new google.maps.Size(20, 20)
+                                });
                             }
+                            selectedBus = marker;
+                            selectedBus.setIcon({
+                                url: selectedIconUrl,
+                                scaledSize: new google.maps.Size(20, 20)
+                            });
+                            clickEnabled = true;
                         });
-                        if (vehiclesFound && !selectedOne) alert("First select a vehicle.");
-                        if (!vehiclesFound) {
-                            alert("No vehicle selected and no vehicle available to select.");
-                        }
-                    } else {
-                        destination = event.latLng;
-                        const tripId = selectedBus.tripId;
-                        const busDistanceFromStart = calculateDistance(selectedBus.startLat, selectedBus.startLon, selectedBus.getPosition().lat(), selectedBus.getPosition().lng());
-                        const markerDistanceFromStart = calculateDistance(selectedBus.startLat, selectedBus.startLon, destination.lat(), destination.lng());
-                        await predictTime(tripId, busDistanceFromStart, markerDistanceFromStart);
-                        //console.log(`gata asteptarea`);
-                        destination = null;
-                        selectedBus = null;
                     }
                 });
-                // Should only be one polyline anyways
                 polylines.forEach(polyline => {
-                    polyline.addListener('click', function(event) {
-                        if (clickEnabled) {
-                            google.maps.event.trigger(map, 'click', event);
+                    polyline.addListener('click', async function(event) {
+                        if (!clickEnabled) return;
+                        clickEnabled = false;
+                        if (!selectedBus) {
+                            alert("First select a vehicle.");
+                        } else {
+                            destination = event.latLng;
+                            const tripId = selectedBus.tripId;
+                            const busDistanceFromStart = calculateDistance(selectedBus.startLat, selectedBus.startLon, selectedBus.getPosition().lat(), selectedBus.getPosition().lng());
+                            const markerDistanceFromStart = calculateDistance(selectedBus.startLat, selectedBus.startLon, destination.lat(), destination.lng());
+                            await predictTime(tripId, busDistanceFromStart, markerDistanceFromStart);
+                            destination = null;
+                            selectedBus = null;
                         }
+                        clickEnabled = true;
                     });
                 });
             }
@@ -264,7 +267,7 @@
                             lat: position.coords.latitude,
                             lng: position.coords.longitude
                         };
-                        console.log('User location:', userLocation);
+                        //console.log('User location:', userLocation);
                         const userMarker = new google.maps.Marker({
                             position: userLocation,
                             map: map,
@@ -358,6 +361,7 @@
                     lng: vehicle.longitude
                 };
                 const iconUrl = vehicle.trip_id.endsWith('_0') ? 'icons/red-icon.png' : 'icons/green-icon.png';
+                //const selectedIconUrl = vehicle.trip_id.endsWith('_0') ? 'icons/selected-red-icon.png' : 'icons/selected-green-icon.png';
                 const tripStopsForVehicle = tripStops.filter(tripStop => tripStop.trip_id === vehicle.trip_id);
                 const startStop = tripStopsForVehicle.find(stop => stop.stop_sequence === 0);
                 const startStopLocation = stopLocations.find(sl => sl.stop_id === startStop.stop_id);
@@ -421,18 +425,28 @@
                     infoWindow.open(map, marker);
                     /*
                       if (selectedBus) {
-                          selectedBus.setMap(null);
-                      }
-         	*/
-                    selectedBus = marker;
-                    alert("Vehicle selected! Now select a point on its route.");
-                    //marker.setIcon({ url: 'icons/selected-icon.png', scaledSize: new google.maps.Size(28, 28) }); // alt icon pentru bus selectat
+                          selectedBus.icon = {
+                        url: iconUrl,
+                        scaledSize: new google.maps.Size(20, 20)
+                    }
                 });
-                markers.push(marker);
+                      }
+                    selectedBus = marker;
+					selectedBus.icon = {
+                        url: iconUrl,
+                        scaledSize: new google.maps.Size(20, 20)
+                    }
+				*/
+                });
+                //alert("Vehicle selected. Now select a point on its route.");
+                //marker.setIcon({ url: selectedIconUrl, scaledSize: new google.maps.Size(20, 20) }); // alt icon pentru bus selectat
+            });
+            markers.push(marker);
             }
 
             function filterByRoute(routeId) {
-                console.log(`Button pressed for route ID ${routeId}`);
+                //console.log(`Button pressed for route ID ${routeId}`);
+                selectedBus = null;
                 fetchVehicles(routeId);
             }
 
