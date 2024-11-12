@@ -1,6 +1,8 @@
 from datetime import datetime
-from main import load_model, predict_time_to_reach, routing_profile
-from flask import request, jsonify
+from main import load_model, predict_time_to_reach
+from flask import Blueprint, request, jsonify
+
+routing_profile = Blueprint('routing_profile', __name__)
 
 @routing_profile.route('/predict', methods=['POST'])
 def predict():

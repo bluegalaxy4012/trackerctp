@@ -3,7 +3,6 @@ from tensorflow import keras
 import os
 from flask import Flask, Blueprint
 from flask_cors import CORS
-
 #peak_hours = {7, 8, 14, 15, 16, 17, 18}
 
 hour_congestion_index = {
@@ -33,13 +32,11 @@ hour_congestion_index = {
     "23": 0
 }
 
-routing_profile = Blueprint('routing_profile', __name__)
 
 def create_app():
     app = Flask(__name__)
-    CORS(app, origins="*")
+    CORS(app, origins="https://bluegalaxy4012.github.io")
     
-    app.register_blueprint(routing_profile)
     return app
 
 def load_model(trip_id):
