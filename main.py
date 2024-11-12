@@ -40,7 +40,7 @@ routing_profile = Blueprint('routing_profile', __name__)
 
 def create_app():
     app = Flask(__name__)
-    CORS(app, origins="https://bluegalaxy4012.github.io/trackerctp")
+    CORS(app, origins="https://bluegalaxy4012.github.io")
     
     app.register_blueprint(routing_profile)
     return app
