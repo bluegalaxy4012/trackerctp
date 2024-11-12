@@ -1,6 +1,7 @@
 import IconButton from "@mui/material/IconButton";
 import StarIcon from "@mui/icons-material/Star";
 import StarOutlineIcon from '@mui/icons-material/StarOutline';
+import { Button } from "@mui/material";
 
 interface FavouriteButtonProps {
     isRouteFavourite: boolean;
@@ -10,8 +11,8 @@ interface FavouriteButtonProps {
 export default function FavouriteButton({ isRouteFavourite, addFavourite }: FavouriteButtonProps) {
     
   return (
-    <IconButton aria-label="favourite" onClick={addFavourite}>
+    <Button aria-label="favourite" onClick={addFavourite} sx={{ minWidth: 0 }}>
         { isRouteFavourite ? <StarIcon /> : <StarOutlineIcon/> }
-    </IconButton>
+    </Button>
   );
 }

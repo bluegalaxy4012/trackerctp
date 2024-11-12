@@ -4,7 +4,8 @@ import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
-import { routeDictionary } from 'helpers/routedata';
+import { routeDictionary } from 'helpers/constants';
+import { bussesSort } from 'helpers/utils';
 
 interface RouteSelectProps {
   routeValue: string;
@@ -17,7 +18,7 @@ export default function RouteSelect({ routeValue = "", onRouteChange }: RouteSel
   };
 
   return (
-    <Box sx={{ minWidth: 75, maxWidth: 90 }}>
+    <Box sx={{ minWidth: 90, maxWidth: 120 }}>
       <FormControl fullWidth>
         <InputLabel id="route-select-label">Route</InputLabel>
         <Select
@@ -26,10 +27,11 @@ export default function RouteSelect({ routeValue = "", onRouteChange }: RouteSel
           value={routeValue}
           label="Route"
           onChange={handleChange}
+          sx={{ textAlign: 'center' }} 
         >
 
-          {Object.keys(routeDictionary).map((key) => (
-            <MenuItem key={key} value={key}>
+          {Object.keys(routeDictionary).toSorted(bussesSort).map((key) => (
+            <MenuItem key={key} value={key} sx={{ textAlign: 'center' }} >
               {key}
             </MenuItem>
           ))}

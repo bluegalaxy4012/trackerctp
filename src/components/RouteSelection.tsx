@@ -14,9 +14,9 @@ interface RouteSelectProps {
   
 export default function RouteSelection({ route, favourites, onRouteChange, addFavourite }: RouteSelectProps) { 
     return (
-        <Stack spacing={2}>
+    <Stack spacing={2}>
         <RouteButtons favouriteRoutes={favourites} onButtonPress={onRouteChange} />
-        <Stack spacing={2} direction="row">
+        <Stack spacing={1} direction="row">
             <RouteSelect routeValue={route} onRouteChange={onRouteChange}/>
             <FavouriteButton isRouteFavourite={favourites.includes(route)} addFavourite={addFavourite}/>
         </Stack>

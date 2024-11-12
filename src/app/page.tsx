@@ -1,6 +1,11 @@
-import * as React from 'react';
-import { routeDictionary } from 'helpers/routedata';
+import { routeDictionary } from 'helpers/constants';
 import MainComponent from 'components/MainComponent';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { useMemo, useState } from 'react';
+import CssBaseline from '@mui/material/CssBaseline';
+import ClientThemeProvider from 'components/ClientThemeProvider';
+import AppBarComponent from 'components/AppBarComponent';
+import { Box, Stack } from '@mui/material';
 
 async function fetchTripStops() {
     const response = await fetch('https://api.tranzy.ai/v1/opendata/stops', {
@@ -69,15 +74,17 @@ export default async function Page() {
     const shapes = fetchAllShapes()
 
     return (
-        <div>
-            <h1>Tracker Bus CTP Cluj-Napoca</h1>
-            <MainComponent stopLocationsPromise={stopLocations} tripStopsPromise={tripStops} shapesPromise={shapes}/>
+        <ClientThemeProvider>
+            <AppBarComponent />
+            <Box sx={{ p: 1 }}>
+                <MainComponent stopLocationsPromise={stopLocations} tripStopsPromise={tripStops} shapesPromise={shapes}/>
+            </Box>
             <div id="bottom-routefetchtext" style={{ position: 'fixed', bottom: '10px', left: '0', right: '0', textAlign: 'center', fontSize: '12px', color: 'black' }}>
                 Last time fetching a route:
             </div>
             <div id="bottom-warningtext" style={{ position: 'fixed', bottom: '30px', left: '0', right: '0', textAlign: 'center', fontSize: '12px', color: 'black' }}>
                 Some warning messages will be displayed here.
             </div>
-        </div>
+        </ClientThemeProvider>
     );
 }
