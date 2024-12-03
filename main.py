@@ -59,7 +59,7 @@ def predict_time_to_reach(model, model_forward, d1, d2, current_datetime):
         current_traffic_index = max(0, current_traffic_index - 3)
     max_iter = 25
 
-    #go back two minutes at a time until we reach almost d1, and then use model_forward to
+    #go back two minutes at a time until we reach almost d1, and then use model_forward
     while d2 > d1 and max_iter > 0:
         input_data = np.array([[d2, current_traffic_index]])
         input_data_forward = np.array([[d1, current_traffic_index]])
@@ -79,3 +79,21 @@ def predict_time_to_reach(model, model_forward, d1, d2, current_datetime):
         d2 = distance_2mins_ago
         max_iter -= 1
     return time_elapsed
+
+def predict_time_interval_to_reach(trip_id, d1, d2, current_datetime):
+    model = load_models(trip_id)
+    if model is None:
+        return 0
+    if d2 - d1 < 0.02 or d2 - d1 > 20:
+        return 0
+    time_elapsed = 0
+    current_traffic_index = hour_congestion_index[str(current_datetime.hour)]
+    while(d2 > d1):
+        previous_d2 = d2
+        input_data = np.array([[d2, current_traffic_index]])
+        distance_2mins_ago = model[0].predict(input_data)[0][0]
+        if distance_2mins_ago <= d1 + 0.02:
+            return time_elapsed, time_elapsed + 120
+        else:
+            time_elapsed += 120
+            d2 = distance_2mins_ago
